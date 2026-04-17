@@ -1,20 +1,15 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "src/server.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "src/server.js"
-    }
-  ],
-  "env": {
-    "LINE_CHANNEL_ID": "@LINE_CHANNEL_ID",
-    "LINE_CHANNEL_SECRET": "@LINE_CHANNEL_SECRET",
-    "LINE_CHANNEL_ACCESS_TOKEN": "@LINE_CHANNEL_ACCESS_TOKEN"
-  }
+    "version": 2,
+    "builds": [
+          {
+                  "src": "src/server.js",
+                  "use": "@vercel/node"
+          }
+    ],
+    "routes": [
+          {
+                  "src": "/(.*)",
+                  "dest": "src/server.js"
+          }
+    ]
 }
