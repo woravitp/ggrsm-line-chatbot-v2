@@ -6,16 +6,18 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node src/server.js",
+    "sync-intents": "node scripts/sync-intents.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["line", "chatbot", "oa", "crm", "vercel"],
+  "keywords": ["line", "chatbot", "oa", "crm", "vercel", "dialogflow"],
   "author": "ggrsm",
   "license": "ISC",
   "dependencies": {
+    "@google-cloud/dialogflow": "^6.11.0",
     "@line/bot-sdk": "^9.3.0",
-    "express": "^4.19.2",
+    "axios": "^1.6.8",
     "dotenv": "^16.4.5",
-    "axios": "^1.6.8"
+    "express": "^4.19.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"

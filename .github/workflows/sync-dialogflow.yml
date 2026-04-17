@@ -1,0 +1,22 @@
+name: Sync Dialogflow Agent
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'dialogflow-agent/**'
+      - 'scripts/sync-intents.js'
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm run sync-intents
+        env:
+          DIALOGFLOW_PROJECT_ID: ${{ secrets.DIALOGFLOW_PROJECT_ID }}
+          GOOGLE_APPLICATION_CREDENTIALS_B64: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_B64 }}
