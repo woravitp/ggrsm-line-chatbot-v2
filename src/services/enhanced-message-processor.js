@@ -64,21 +64,12 @@ const processMessage = async (message, userId) => {
   }
 };
 
-// Intent name → handler. Map these to the intent displayNames you create in Dialogflow.
+// Only override Dialogflow responses for intents that need computed logic (product info, quotation).
+// All other intents (welcome, help, contact, FAQ, etc.) use fulfillmentText from Dialogflow directly.
 const dispatchIntent = async (df, message, session) => {
   const { intent, parameters, fulfillmentText, isFallback } = df;
 
   switch (intent) {
-    case 'Default Welcome Intent':
-    case 'greeting':
-      return getWelcomeMessage();
-
-    case 'help':
-      return getHelpMessage();
-
-    case 'contact':
-      return getContactInfo();
-
     case 'product.inquiry':
       return handleProductInquiry(parameters, message) || fulfillmentText || getDefaultReply();
 
@@ -86,9 +77,8 @@ const dispatchIntent = async (df, message, session) => {
       return handleQuotationRequest(parameters, message, session);
 
     default:
-      // For FAQ intents (faq.warranty, faq.delivery, ...) let Dialogflow answer directly.
-      if (fulfillmentText && !isFallback) return fulfillmentText;
-      if (fulfillmentText && isFallback) return fulfillmentText;
+      // Use Dialogflow response for everything else (welcome, help, contact, FAQ, fallback, etc.)
+      if (fulfillmentText) return fulfillmentText;
       return getDefaultReply();
   }
 };
@@ -96,7 +86,6 @@ const dispatchIntent = async (df, message, session) => {
 const resolveProductKey = (parameters, message) => {
   const param = parameters?.product_type;
   if (typeof param === 'string' && productTypeMap[param]) return productTypeMap[param];
-  // Fallback: scan message text for a product keyword
   const lower = (message || '').toLowerCase();
   for (const key of Object.keys(products)) {
     if (lower.includes(key.toLowerCase())) return key;
@@ -161,6 +150,8 @@ const generateQuotation = async (productName) => {
   return q;
 };
 
+// Used by webhook-controller.js when a user first follows the bot (follow event).
+// You can edit this text here, OR handle follow event via a Dialogflow event trigger.
 const getWelcomeMessage = () => `🏢 ยินดีต้อนรับสู่ GGRSM!
 
 เราเป็นผู้จัดจำหน่ายอุปกรณ์สำนักงาน:
@@ -176,42 +167,10 @@ const getWelcomeMessage = () => `🏢 ยินดีต้อนรับสู
 
 พิมพ์ "help" เพื่อดูคำสั่งทั้งหมด`;
 
-const getHelpMessage = () => `📋 คำสั่งที่ใช้ได้:
-
-🔍 สอบถามสินค้า:
-• "เครื่องทำลายเอกสาร"
-• "เครื่องสแกน"
-• "เครื่องถ่ายเอกสาร"
-
-💰 ขอใบเสนอราคา:
-• "ขอใบเสนอราคา [ชื่อสินค้า]"
-• "ราคาเครื่องทำลายเอกสาร"
-
-📞 ติดต่อ:
-• "ติดต่อ"
-• "เบอร์โทร"
-
-❓ คำถามทั่วไป:
-• การรับประกัน
-• การจัดส่ง
-• การติดตั้ง`;
-
-const getContactInfo = () => `📞 ติดต่อ GGRSM
-
-🏢 ที่อยู่: กรุงเทพมหานคร
-📱 โทร: 096-207-2323
-📧 อีเมล: ggrsm2025@gmail.com
-⏰ เวลาทำการ: จันทร์-ศุกร์ 8:00-17:00
-
-🌐 เว็บไซต์: www.ggrsm.com
-💬 LINE OA: @ggrsm`;
-
 const getDefaultReply = () =>
   `ขอบคุณสำหรับข้อความของคุณ\n\nหากต้องการความช่วยเหลือ พิมพ์ "help" หรือ "ช่วยเหลือ"\n\nหรือสอบถามเกี่ยวกับ:\n- เครื่องทำลายเอกสาร\n- เครื่องสแกน\n- เครื่องถ่ายเอกสาร\n- ใบเสนอราคา`;
 
 module.exports = {
   processMessage,
   getWelcomeMessage,
-  getHelpMessage,
-  getContactInfo,
 };
