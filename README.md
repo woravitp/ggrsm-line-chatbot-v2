@@ -166,7 +166,7 @@ const products = {
 ## การติดต่อ
 
 - **เว็บไซต์**: www.ggrsm.com
-- **โทร**: 02-123-4567
+- **โทร**: 0962072323
 - **LINE OA**: @ggrsm
 - **อีเมล**: info@ggrsm.com
 
