@@ -4,6 +4,9 @@ const dialogflow = require('./dialogflow-service');
 // User sessions storage (in production, use Redis or database)
 const userSessions = new Map();
 
+// Session active timeout (30 minutes) — fallback จะเงียบภายในช่วงนี้
+const SESSION_ACTIVE_MS = 30 * 60 * 1000;
+
 // Product knowledge base
 const products = {
   'เครื่องทำลายเอกสาร': {
@@ -49,6 +52,7 @@ const processMessage = async (message, userId) => {
       userSessions.set(userId, {
         conversationState: 'start',
         lastInteraction: Date.now(),
+        lastBotReplyTime: 0,
         pendingQuotation: null,
       });
     }
@@ -56,7 +60,14 @@ const processMessage = async (message, userId) => {
     userSession.lastInteraction = Date.now();
 
     const df = await dialogflow.detectIntent(message, userId);
-    return await dispatchIntent(df, message, userSession);
+    const reply = await dispatchIntent(df, message, userSession);
+
+    // บันทึกเวลาที่บอทตอบจริง (ไม่รวมกรณีเงียบ)
+    if (reply) {
+      userSession.lastBotReplyTime = Date.now();
+    }
+
+    return reply;
   } catch (error) {
     logger.log('Message processing error:', error.message);
     console.error(error);
@@ -69,15 +80,24 @@ const processMessage = async (message, userId) => {
 const dispatchIntent = async (df, message, session) => {
   const { intent, parameters, fulfillmentText, isFallback } = df;
 
+  // Conditional Fallback: ถ้า session active อยู่ (บอทเพิ่งตอบภายใน 30 นาที) → เงียบ
+  if (isFallback) {
+    const elapsed = Date.now() - (session.lastBotReplyTime || 0);
+    if (session.lastBotReplyTime && elapsed < SESSION_ACTIVE_MS) {
+      logger.log('Fallback suppressed (session active)');
+      return null; // เงียบ ไม่ส่ง reply
+    }
+    // Session หมดอายุ หรือเป็นครั้งแรก → ตอบ fulfillmentText จาก Dialogflow
+    return fulfillmentText || getDefaultReply();
+  }
+
   switch (intent) {
     case 'product.inquiry':
       return handleProductInquiry(parameters, message) || fulfillmentText || getDefaultReply();
-
     case 'quotation.request':
       return handleQuotationRequest(parameters, message, session);
-
     default:
-      // Use Dialogflow response for everything else (welcome, help, contact, FAQ, fallback, etc.)
+      // Use Dialogflow response for everything else (welcome, help, contact, FAQ, etc.)
       if (fulfillmentText) return fulfillmentText;
       return getDefaultReply();
   }
@@ -97,7 +117,6 @@ const handleProductInquiry = (parameters, message) => {
   const key = resolveProductKey(parameters, message);
   if (!key) return null;
   const product = products[key];
-
   let response = `🔍 ${product.name}\n\n`;
   response += `📝 ${product.description}\n\n`;
   response += `📊 รุ่นที่มีจำหน่าย:\n`;
@@ -151,7 +170,6 @@ const generateQuotation = async (productName) => {
 };
 
 // Used by webhook-controller.js when a user first follows the bot (follow event).
-// You can edit this text here, OR handle follow event via a Dialogflow event trigger.
 const getWelcomeMessage = () => `ขอบคุณสำหรับข้อความของคุณ
 ทางเราจำหน่าย:
 - เครื่องทำลายเอกสาร
