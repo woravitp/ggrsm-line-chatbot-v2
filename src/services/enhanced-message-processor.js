@@ -18,7 +18,7 @@ const SUPPRESS_WHEN_ACTIVE_INTENTS = new Set([
     ]);
 
 // ศูนย์กลางข้อมูลติดต่อ — แก้ที่นี่จุดเดียวจะมีผลทั้งไฟล์
-const CONTACT_PHONE = '0962072323';
+const CONTACT_PHONE = '065-509-9947';
 
 // Product knowledge base
 const products = {
